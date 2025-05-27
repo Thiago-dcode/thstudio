@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
-
+import { Brand } from '@repo/types';
 @Injectable()
 export class BrandsService {
-  async getOne(id: string) {
-    return `Hello World brand ${id}`;
+  async getOne(id: string): Promise<Brand> {
+    return {
+      id,
+      name: `Brand ${id}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
-  async getAll() {
-    return 'Hello World from getAll';
+  async getAll(): Promise<Brand[]> {
+    return [];
   }
 }

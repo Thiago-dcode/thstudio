@@ -1,9 +1,7 @@
 {
-    "extends": "@repo/typescript-config/nestjs.json",
+    "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
-      "baseUrl": "src",
-      "esModuleInterop": true,
-      "incremental": false,
+      "baseUrl": "src", 
       "outDir": "dist",
       
     },
