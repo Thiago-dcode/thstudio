@@ -19,6 +19,7 @@ enum EnumRole {
   ADMIN
   USER
   EDITOR
+  CLIENT
 }
 
 enum EnumProjectStatus {
@@ -43,13 +44,14 @@ enum EnumMediaShape {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   roleId    Int
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  media     Media[]
 }
 
 model Role {
@@ -70,6 +72,7 @@ model Client {
   updatedAt DateTime  @updatedAt
   Project   Project[]
   address   Address?
+
   @@map("clients")
 }
 
@@ -160,6 +163,8 @@ model Media {
   service     Service?       @relation(fields: [serviceId], references: [id])
   projectId   Int?           @map("project_id")
   project     Project?       @relation(fields: [projectId], references: [id])
+  userId      Int            @map("user_id")
+  user        User           @relation(fields: [userId], references: [id])
 
   @@map("media")
 }
