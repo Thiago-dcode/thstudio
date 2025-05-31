@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { MediaController } from './media.controller';
-import { AmazonS3Service } from 'common/services/AmazonS3Service';
+import { AmazonS3Service } from '@common/services/storage/AmazonS3Service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';

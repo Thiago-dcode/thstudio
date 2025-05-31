@@ -4,8 +4,14 @@
     "baseUrl": "src",
     "esModuleInterop": true,
     "incremental": false,
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@database/*": ["database/*"],
+      "@common/*": ["common/*"],
+      "@config/*": ["config/*"],
+      "@modules/*": ["modules/*"]
+    }
   },
-  "include": ["src", "prisma"],
+  "include": ["src"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

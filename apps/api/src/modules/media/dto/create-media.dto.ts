@@ -1,8 +1,16 @@
-import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString} from 'class-validator';
+import { ModelExist } from '@common/validators/ModelExist.validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 export class CreateMediaDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  title: string;
 
   @IsString()
   @IsNotEmpty()
@@ -11,19 +19,18 @@ export class CreateMediaDto {
   @IsInt()
   @IsNotEmpty()
   @IsPositive()
-  userId: number;
+  @ModelExist('User','id')
+  user_id: number;
 
   @IsInt()
   @IsNotEmpty()
   @IsOptional()
-  projectId: number;
-
+  @ModelExist('Project')
+  project_id: number;
 
   @IsInt()
   @IsNotEmpty()
   @IsOptional()
-  serviceId: number;
-
-  
-  
+  @ModelExist('Service')
+  service_id: number;
 }

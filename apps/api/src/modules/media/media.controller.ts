@@ -16,6 +16,7 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post()
+  
   create(@Body() createMediaDto: CreateMediaDto) {
     return this.mediaService.create(createMediaDto);
   }
