@@ -8,6 +8,7 @@ export const projectStatusSeeder = async (prisma: PrismaClient) => {
     'COMPLETED',
     'CANCELLED',
   ];
+  await prisma.projectStatus.deleteMany();
   await prisma.projectStatus.createMany({
     data: STATUSES.map((status) => ({
       name: status,

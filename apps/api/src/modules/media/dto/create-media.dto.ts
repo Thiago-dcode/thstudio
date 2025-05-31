@@ -1,4 +1,4 @@
-import { ModelExist } from '@common/validators/ModelExist.validator';
+import { ModelExist } from '@common/validators/model-exist.validator';
 import {
   IsInt,
   IsNotEmpty,

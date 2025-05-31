@@ -5,7 +5,7 @@ import {
   ValidationOptions,
   registerDecorator,
 } from 'class-validator';
-import { PrismaService } from '@common/services/db/PrismaService';
+import { PrismaService } from '@common/services/db/prisma.service';
 import { Prisma } from '@database/generated/prisma';
 import { Injectable } from '@nestjs/common';
 
@@ -28,6 +28,7 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
   constructor(private readonly prisma: PrismaService) {}
 
   async validate(value: any, args: ValidationArguments) {
+    //If the value is optional or required, should handle by another validator
     if (value == undefined) return true;
     const [model, field = 'id'] = args.constraints;
     const modelFields = Prisma.dmmf.datamodel.models.find(

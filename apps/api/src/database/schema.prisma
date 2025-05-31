@@ -46,7 +46,9 @@ enum EnumMediaShape {
 model User {
   id        Int      @id @default(autoincrement())
   name      String
+  username  String   @unique
   email     String   @unique
+  password  String
   roleId    Int
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())

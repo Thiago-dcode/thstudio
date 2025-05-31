@@ -6,7 +6,6 @@ export const ValidationPipeProvider = {
   useFactory: () => {
     return new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
       validateCustomDecorators: true,
       exceptionFactory: (errors) => {
