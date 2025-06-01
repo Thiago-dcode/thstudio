@@ -14,6 +14,9 @@ export class AuthenticationService {
   async login(loginDto: LoginRequest) {
     const user = await this.prisma.user.findUnique({
       where: { username: loginDto.username },
+      include: {
+        role: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -27,6 +30,6 @@ export class AuthenticationService {
     }
     const payload = { sub: user.id, username: user.username };
     const token = await this.jwtService.signAsync(payload);
-    return new LoginResponse(user, token);
+    return new LoginResponse(user, user.role, token);
   }
 }

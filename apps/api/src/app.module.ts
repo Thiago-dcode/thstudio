@@ -13,7 +13,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { AuthenticationMiddlewareModule } from '@common/middlewares/authentication.module';
-
+import { AllExceptionFilter } from '@common/filters/all-exception.filter';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -36,6 +36,11 @@ import { AuthenticationMiddlewareModule } from '@common/middlewares/authenticati
     ...PipesProvider,
     ...ValidatorProviders,
     RequestService,
+ 
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionFilter,
+    },
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,

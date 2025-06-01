@@ -24,7 +24,6 @@ export class AuthenticationMiddleware implements NestMiddleware {
           id: payload.sub,
         },
       });
-      console.log("user", user);
       if (!user) {
         throw new UnauthorizedException();
       }

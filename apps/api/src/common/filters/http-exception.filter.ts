@@ -22,6 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.error(
       `${request.method} ${request.url} ${status} ${responseMessage} ${environment}`,
     );
+    const timestamp = new Date().toISOString();
     const stack =
       environment === 'development' ||
       environment === 'test' ||
@@ -36,12 +37,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         Array.isArray(responseMessage['message'])
       ) {
         response.status(status).json({
+          timestamp,
           ...responseMessage,
           stack: stack,
         });
       } else {
         console.log('responseMessage', responseMessage);
         response.status(status).json({
+          timestamp,
           ...responseMessage,
           message: [
             {
@@ -55,7 +58,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else {
       response.status(status).json({
-        statusCode: status,
+        timestamp,
+
         message: [
           {
             property: exception.name,
@@ -63,6 +67,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           },
         ],
         error: exception.message,
+        statusCode: status,
         stack: stack,
       });
     }

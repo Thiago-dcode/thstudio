@@ -7,6 +7,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { StorageService } from '@common/services/storage/StorageService';
+import { StorageUploadException } from './exceptions/StorageUploadException';
+import { StorageGetException } from './exceptions/StorageGetException';
 
 @Injectable()
 export class AmazonS3Service extends StorageService {
@@ -35,24 +37,40 @@ export class AmazonS3Service extends StorageService {
       Bucket: this.bucketName,
       Key: fileName,
     });
-    const url = await getSignedUrl(this.s3Client, command, {
-      expiresIn: this.signedUrlExpiration,
-    });
-    return url;
+    try {
+      const url = await getSignedUrl(this.s3Client, command, {
+        expiresIn: this.signedUrlExpiration,
+      });
+      return url;
+    } catch (error) {
+      throw new StorageGetException(error);
+    }
   }
 
-  async uploadFile(file: Buffer, fileName: string, contentType?: string) {
+  async uploadFile(file: Express.Multer.File, fileName?: string) {
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
-      Key: fileName,
-      Body: file,
-      ContentType: contentType,
+      Key: fileName || file.originalname,
+      Body: file.buffer,
+      ContentType: file.mimetype,
     });
-    await this.s3Client.send(command);
-    return true;
+    try {
+      const result = await this.s3Client.send(command);
+      return !!result;
+    } catch (error) {
+      throw new StorageUploadException(error);
+    }
+  }
+
+  async uploadAndGetFile(file: Express.Multer.File, fileName?: string) {
+    const result = await this.uploadFile(file, fileName);
+    if (!result) {
+      throw new StorageUploadException('Failed to upload file');
+    }
+    return this.getFile(fileName || file.originalname);
   }
 
   async deleteFile(fileUrl: string): Promise<boolean> {
-    return true;
+    throw new Error('Not implemented');
   }
 }

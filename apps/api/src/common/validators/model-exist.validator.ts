@@ -38,6 +38,7 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
       this.message = `Model ${model} does not exist`;
       return false;
     }
+
     if (
       !modelFields.find(
         (_field) =>

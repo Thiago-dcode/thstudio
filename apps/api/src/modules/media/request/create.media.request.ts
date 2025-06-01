@@ -6,31 +6,37 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
-export class CreateMediaDto {
+import { Transform } from 'class-transformer';
+
+export class CreateMediaRequest {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  title: string;
+  title?: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
+  @Transform(({ value }) => parseInt(value, 10))
   @IsInt()
   @IsNotEmpty()
   @IsPositive()
-  @ModelExist('User','id')
+  @ModelExist('User', 'id')
   user_id: number;
 
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsInt()
   @IsNotEmpty()
   @IsOptional()
   @ModelExist('Project')
-  project_id: number;
+  project_id?: number;
 
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
   @IsInt()
   @IsNotEmpty()
   @IsOptional()
   @ModelExist('Service')
-  service_id: number;
+  service_id?: number;
 }
