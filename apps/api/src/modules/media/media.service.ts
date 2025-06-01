@@ -52,6 +52,8 @@ export class MediaService {
           90,
           1 * 1024 * 1024,
         );
+      } else if (media.type === 'VIDEO') {
+        //TODO: compress video
       }
       const url = await this.storageService.uploadAndGetFile(
         file,

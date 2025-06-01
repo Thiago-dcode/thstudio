@@ -3,7 +3,6 @@ import {
   Injectable,
   UnprocessableEntityException,
   PipeTransform,
-  ArgumentMetadata,
 } from '@nestjs/common';
 
 const MAX_SIZE_MAP = {
@@ -64,8 +63,9 @@ export class FileValidationPipe
         const keys = Object.keys(maxSize);
         for (let index = 0; index < keys.length; index++) {
           const key = keys[index];
-          const _maxSize = maxSize[key];
+        
           if (MAX_SIZE_MAP[key].includes(file.mimetype)) {
+            const _maxSize = maxSize[key];
             if (file.size > _maxSize) {
               throw new UnprocessableEntityException([
                 {
