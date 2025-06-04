@@ -8,7 +8,7 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
-  ParseFilePipe,
+  Query,
 } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { CreateMediaRequest } from './request/create.media.request';
@@ -19,6 +19,7 @@ import {
   FileValidationOptions,
 } from '@common/pipes/file-validation.pipe';
 import { EnumMediaType } from '@database/generated/prisma/client';
+import { ShowMediaRequest } from './request/show.media.request';
 
 const validationOptions = (required: boolean): FileValidationOptions => {
   return {
@@ -46,12 +47,12 @@ export class MediaController {
   }
 
   @Get()
-  findAll() {
+  index() {
     return this.mediaService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  show(@Param('id') id: string, @Query() showMediaRequest: ShowMediaRequest) {
     return this.mediaService.findOne(+id);
   }
 

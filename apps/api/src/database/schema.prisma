@@ -43,16 +43,23 @@ enum EnumMediaShape {
   PORTRAIT
 }
 
+enum EnumLanguage {
+  EN
+  ES
+  BR
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
-  username  String   @unique
-  email     String   @unique
+  username  String    @unique
+  email     String    @unique
   password  String
-  roleId    Int
-  role      Role     @relation(fields: [roleId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  roleId    Int?      @map("role_id")
+  role      Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? @map("deleted_at")
   media     Media[]
 }
 
@@ -72,6 +79,7 @@ model Client {
   website   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  deletedAt DateTime? @map("deleted_at")
   Project   Project[]
   address   Address?
 
@@ -81,36 +89,36 @@ model Client {
 //Project
 
 model Project {
-  id                  Int                  @id @default(autoincrement())
-  name                String
-  slug                String               @unique
-  shortDescription    String               @map("short_description")
-  description         String               @map("description")
-  clientId            Int                  @map("client_id")
-  client              Client               @relation(fields: [clientId], references: [id])
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  media               Media[]
-  projectTranslations ProjectTranslation[]
-  projectStatus       ProjectStatus        @relation(fields: [projectStatusId], references: [id])
-  projectStatusId     Int                  @map("project_status_id")
-  service             Service              @relation(fields: [serviceId], references: [id])
-  serviceId           Int                  @map("service_id")
+  id               Int                  @id @default(autoincrement())
+  name             String
+  slug             String               @unique
+  shortDescription String               @map("short_description")
+  description      String               @map("description")
+  clientId         Int                  @map("client_id")
+  client           Client               @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  media            Media[]
+  translations     ProjectTranslation[]
+  projectStatus    ProjectStatus        @relation(fields: [projectStatusId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  projectStatusId  Int                  @map("project_status_id")
+  service          Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  serviceId        Int                  @map("service_id")
 
   @@map("projects")
 }
 
 model ProjectTranslation {
-  id               Int      @id @default(autoincrement())
+  id               Int          @id @default(autoincrement())
   name             String
-  shortDescription String   @map("short_description")
-  description      String   @map("description")
-  languageId       Int      @map("language_id")
-  language         Language @relation(fields: [languageId], references: [id])
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-  projectId        Int      @map("project_id")
-  project          Project  @relation(fields: [projectId], references: [id])
+  shortDescription String       @map("short_description")
+  description      String       @map("description")
+  languageCode     EnumLanguage @map("language_code")
+  language         Language     @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  projectId        Int          @map("project_id")
+  project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("project_translations")
 }
@@ -126,48 +134,91 @@ model ProjectStatus {
 }
 
 model Service {
-  id                  Int                  @id @default(autoincrement())
-  name                String
-  description         String
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  media               Media[]
-  serviceTranslations ServiceTranslation[]
-  projects            Project[]
+  id           Int                  @id @default(autoincrement())
+  name         String
+  description  String
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  isActive     Boolean              @default(true) @map("is_active")
+  media        Media[]
+  translations ServiceTranslation[]
+  projects     Project[]
 
   @@map("services")
 }
 
 model ServiceTranslation {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  languageId  Int      @map("language_id")
-  language    Language @relation(fields: [languageId], references: [id])
-  serviceId   Int      @map("service_id")
-  service     Service  @relation(fields: [serviceId], references: [id])
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           Int          @id @default(autoincrement())
+  name         String
+  description  String
+  languageCode EnumLanguage @map("language_code")
+  language     Language     @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+  serviceId    Int          @map("service_id")
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
 
   @@map("service_translations")
 }
 
 model Media {
-  id          Int             @id @default(autoincrement())
-  title       String?
-  description String?
-  type        EnumMediaType
-  shape       EnumMediaShape?
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  serviceId   Int?            @map("service_id")
-  service     Service?        @relation(fields: [serviceId], references: [id])
-  projectId   Int?            @map("project_id")
-  project     Project?        @relation(fields: [projectId], references: [id])
-  userId      Int             @map("user_id")
-  user        User            @relation(fields: [userId], references: [id])
+  id           Int                @id @default(autoincrement())
+  title        String?
+  description  String?
+  type         EnumMediaType
+  shape        EnumMediaShape?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  deletedAt    DateTime?          @map("deleted_at")
+  addressId    Int?               @map("address_id")
+  address      Address?           @relation(fields: [addressId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  serviceId    Int?               @map("service_id")
+  service      Service?           @relation(fields: [serviceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  projectId    Int?               @map("project_id")
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  userId       Int?               @map("user_id")
+  user         User?              @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  categories   MediaCategory[]
+  translations MediaTranslation[]
 
   @@map("media")
+}
+
+model MediaTranslation {
+  id           Int          @id @default(autoincrement())
+  title        String?
+  description  String?
+  languageCode EnumLanguage @map("language_code")
+  language     Language     @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+  mediaId      Int          @map("media_id")
+  media        Media        @relation(fields: [mediaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("media_translations")
+}
+
+model MediaCategory {
+  id           Int                        @id @default(autoincrement())
+  name         String
+  description  String?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  media        Media[]
+  categoryType EnumMediaType
+  translations MediaCategoryTranslation[]
+
+  @@map("media_categories")
+}
+
+model MediaCategoryTranslation {
+  id              Int           @id @default(autoincrement())
+  name            String
+  description     String?
+  languageCode    EnumLanguage  @map("language_code")
+  language        Language      @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+  mediaCategoryId Int           @map("media_category_id")
+  mediaCategory   MediaCategory @relation(fields: [mediaCategoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("media_category_translations")
 }
 
 model Address {
@@ -176,10 +227,11 @@ model Address {
   city      String
   state     String
   zip       String
+  media     Media[]
   countryId Int      @map("country_id")
-  country   Country  @relation(fields: [countryId], references: [id])
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   clientId  Int      @unique @map("client_id")
-  client    Client   @relation(fields: [clientId], references: [id])
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -187,21 +239,49 @@ model Address {
 }
 
 model Country {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  addresses Address[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id           Int                  @id @default(autoincrement())
+  code         String               @unique
+  name         String               @unique
+  addresses    Address[]
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  translations CountryTranslation[]
+
+  @@map("countries")
+}
+
+model CountryTranslation {
+  id           Int          @id @default(autoincrement())
+  name         String
+  languageCode EnumLanguage @map("language_code")
+  language     Language     @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+  countryId    Int          @map("country_id")
+  Country      Country      @relation(fields: [countryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("country_translations")
 }
 
 model Language {
-  id                  Int                  @id @default(autoincrement())
-  code                String               @unique
-  name                String               @unique
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  projectTranslations ProjectTranslation[]
-  serviceTranslations ServiceTranslation[]
+  code                      EnumLanguage               @id @unique
+  name                      String                     @unique
+  isDefault                 Boolean                    @default(false)
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+  updatedAt                 DateTime                   @updatedAt @map("updated_at")
+  projectTranslations       ProjectTranslation[]
+  serviceTranslations       ServiceTranslation[]
+  mediaTranslations         MediaTranslation[]
+  mediaCategoryTranslations MediaCategoryTranslation[]
+  CountryTranslation        CountryTranslation[]
+  translations              LanguageTranslation[]
 
   @@map("languages")
+}
+
+model LanguageTranslation {
+  id           Int          @id @default(autoincrement())
+  name         String
+  languageCode EnumLanguage @map("language_code")
+  language     Language     @relation(fields: [languageCode], references: [code], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("language_translations")
 }

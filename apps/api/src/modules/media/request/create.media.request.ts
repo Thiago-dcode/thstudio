@@ -1,5 +1,6 @@
 import { ModelExist } from '@common/validators/model-exist.validator';
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -39,4 +40,11 @@ export class CreateMediaRequest {
   @IsOptional()
   @ModelExist('Service')
   service_id?: number;
+
+  @IsArray()
+  @IsNotEmpty()
+  @IsOptional()
+  @IsInt({ each: true })
+  @ModelExist('MediaCategory')
+  categories?: number[];
 }

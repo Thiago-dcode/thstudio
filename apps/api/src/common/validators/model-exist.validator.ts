@@ -29,7 +29,8 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
 
   async validate(value: any, args: ValidationArguments) {
     //If the value is optional or required, should handle by another validator
-    if (value == undefined) return true;
+    const isArray = Array.isArray(value);
+    if (value == undefined ||( isArray && value.length === 0)) return true;
     const [model, field = 'id'] = args.constraints;
     const modelFields = Prisma.dmmf.datamodel.models.find(
       (_model) => _model.name === model,
@@ -39,11 +40,13 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
       return false;
     }
 
+    
     if (
       !modelFields.find(
         (_field) =>
           _field.name === field &&
-          PRISMA_FIELD_TYPES[_field.type] === typeof value,
+          PRISMA_FIELD_TYPES[_field.type] ===
+            (isArray ? value[0] : typeof value),
       )
     ) {
       this.message = `Field ${field} does not exist in ${model} or is not of type ${typeof value}`;

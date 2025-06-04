@@ -10,13 +10,17 @@ import { STORAGE_SERVICE } from '@common/services/storage/storage.config';
 import { StorageService } from '@common/services/storage/StorageService';
 import { UpdateMediaRequest } from './request/update.media.reques';
 import { MediaResponse } from './response/media.response';
+import { ShowMediaRequest } from './request/show.media.request';
+import { RequestService } from '@common/services/request/request.service';
 
 @Injectable()
 export class MediaService {
   constructor(
+    
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE)
     private readonly storageService: StorageService,
+    private readonly requestService: RequestService,
   ) {}
 
   async create(
@@ -73,7 +77,8 @@ export class MediaService {
     return `This action returns all media`;
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
+ 
     return `This action returns a #${id} media`;
   }
 
