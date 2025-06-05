@@ -22,18 +22,20 @@ const PRISMA_FIELD_TYPES = {
 } as const;
 
 @Injectable()
-@ValidatorConstraint({ name: 'modelExist', async: true })
-export class ModelExistValidator implements ValidatorConstraintInterface {
+@ValidatorConstraint({ name: 'modelArrayExist', async: true })
+export class ModelArrayExistValidator implements ValidatorConstraintInterface {
   private message: string;
   constructor(private readonly prisma: PrismaService) {}
 
   async validate(value: any, args: ValidationArguments) {
     //If the value is optional or required, should handle by another validator
     if (value == undefined) return true;
-    if (typeof value === 'object') {
-      this.message = 'Invalid value type, only primitive value is allowed';
+    const isArray = Array.isArray(value);
+    if (!isArray) {
+      this.message = 'Invalid value type, only array is allowed';
       return false;
     }
+    if (value.length === 0) return true;
     const [model, field = 'id'] = args.constraints;
     const modelFields = Prisma.dmmf.datamodel.models.find(
       (_model) => _model.name === model,
@@ -47,7 +49,9 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
       !modelFields.find(
         (_field) =>
           _field.name === field &&
-          PRISMA_FIELD_TYPES[_field.type] === typeof value,
+          value.every(
+            (item: any) => PRISMA_FIELD_TYPES[_field.type] === typeof item,
+          ),
       )
     ) {
       this.message = `Field ${field} does not exist in ${model} or is not of type ${typeof value}`;
@@ -55,14 +59,14 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
     }
     const modelClient = this.prisma[model.toLowerCase()];
     try {
-      const record = await (modelClient as any).count({
-        where: { [field]: value },
-      });
-      if (record == 0) {
-        this.message = `${field}: ${value} does not exist in ${model}`;
-        return false;
-      }
-      return true;
+      const records = await Promise.all(
+        value.map(async (item: any) => {
+          return await (modelClient as any).count({
+            where: { [field]: item },
+          });
+        }),
+      );
+      return records.every((record) => record > 0);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError ||
@@ -83,19 +87,19 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
   }
 }
 
-export function ModelExist(
+export function ModelArrayExist(
   model: Prisma.ModelName,
   field?: string,
   validationOptions?: ValidationOptions,
 ) {
   return function (object: Object, propertyName: string) {
     registerDecorator({
-      name: 'modelExist',
+      name: 'modelArrayExist',
       target: object.constructor,
       propertyName: propertyName,
       constraints: [model, field],
       options: validationOptions,
-      validator: ModelExistValidator,
+      validator: ModelArrayExistValidator,
     });
   };
 }

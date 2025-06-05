@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { PrismaClient } from '@database/generated/prisma';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+ 
   async onModuleInit() {
+   
     await this.$connect();
   }
 

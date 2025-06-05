@@ -4,6 +4,7 @@ export const languageSeeder = async (prisma: PrismaClient) => {
   const LANGUAGES_CODES: {
     code: EnumLanguage;
     name: string;
+    isDefault?: boolean;
     translations: {
       code: EnumLanguage;
       name: string;
@@ -30,7 +31,6 @@ export const languageSeeder = async (prisma: PrismaClient) => {
     {
       code: 'ES',
       name: 'Spanish',
-
       translations: [
         {
           code: 'EN',
@@ -67,7 +67,7 @@ export const languageSeeder = async (prisma: PrismaClient) => {
   ];
   await prisma.language.deleteMany();
   await prisma.language.createMany({
-    data: LANGUAGES_CODES.map(({ code, name, translations }) => ({
+    data: LANGUAGES_CODES.map(({ code, name }) => ({
       name,
       code,
       isDefault: code === 'ES',

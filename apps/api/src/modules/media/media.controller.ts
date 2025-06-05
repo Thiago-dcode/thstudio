@@ -52,7 +52,7 @@ export class MediaController {
   }
 
   @Get(':id')
-  show(@Param('id') id: string, @Query() showMediaRequest: ShowMediaRequest) {
+  show(@Param('id') id: string) {
     return this.mediaService.findOne(+id);
   }
 

@@ -1,10 +1,10 @@
 import { Injectable, Scope } from '@nestjs/common';
-import { Language, User } from '@database/generated/prisma';
+import { User, EnumLanguage } from '@database/generated/prisma';
 
 @Injectable({ scope: Scope.REQUEST })
 export class RequestService {
   private _user: User;
-  private _language: Language;
+  private _language: EnumLanguage;
   constructor() {}
   get user(): User {
     return this._user;
@@ -12,10 +12,10 @@ export class RequestService {
   set user(user: User) {
     this._user = user;
   }
-  get language(): Language {
+  get language(): EnumLanguage {
     return this._language;
   }
-  set language(language: Language) {
+  set language(language: EnumLanguage) {
     this._language = language;
   }
 }

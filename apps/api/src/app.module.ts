@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+  import { MiddlewareConsumer, Module, RequestMethod} from '@nestjs/common';
 import { InterceptorsProvider } from '@common/interceptors/interceptor.providers';
 import { MediaModule } from '@modules/media/media.module';
 import { ConfigModule } from '@nestjs/config';
@@ -13,8 +13,41 @@ import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionFilter } from '@common/filters/all-exception.filter';
 import { RequestModule } from '@common/services/request/request.module';
 import { LanguageMiddleware } from '@common/middlewares/language.middleware';
+import { LoggerModule } from 'nestjs-pino';
+import {
+  CorrelationIdMiddleware,
+} from '@common/middlewares/correlation-id/correlation-id.middleware';
+import { Request } from 'express';
+import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                target: 'pino-pretty',
+                options: {
+                  messageKey: 'message',
+                },
+              }
+            : undefined,
+        messageKey: 'message',
+        autoLogging: false,
+        serializers: {
+          req(req: Request) {
+            return undefined;
+          },
+          res() {
+            return undefined;
+          },
+        },
+       
+      },
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -60,5 +93,6 @@ export class AppModule {
       )
       .forRoutes('*');
     consumer.apply(LanguageMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
   }
 }

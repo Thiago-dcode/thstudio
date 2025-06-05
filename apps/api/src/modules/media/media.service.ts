@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { CreateMediaRequest } from './request/create.media.request';
 import { PrismaService } from '@common/services/db/prisma.service';
@@ -15,14 +16,24 @@ import { RequestService } from '@common/services/request/request.service';
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
   constructor(
-    
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE)
     private readonly storageService: StorageService,
     private readonly requestService: RequestService,
   ) {}
 
+ 
+  findAll() {
+    return `This action returns all media`;
+  }
+
+  async findOne(id: number) {
+    this.logger.log(this.requestService.language);
+
+    return `This action returns a #${id} media`;
+  }
   async create(
     createMediaRequest: CreateMediaRequest,
     file: Express.Multer.File,
@@ -73,15 +84,6 @@ export class MediaService {
       throw error;
     }
   }
-  findAll() {
-    return `This action returns all media`;
-  }
-
-  async findOne(id: number) {
- 
-    return `This action returns a #${id} media`;
-  }
-
   update(
     id: number,
     updateMediaRequest: UpdateMediaRequest,
