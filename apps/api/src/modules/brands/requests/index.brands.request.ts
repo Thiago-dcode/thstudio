@@ -1,9 +1,3 @@
-
-
 class IndexBrandsRequest {
-
-    name?:string
-    
-
-
+  name?: string;
 }

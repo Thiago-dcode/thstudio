@@ -12,14 +12,14 @@ import {
 } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { CreateMediaRequest } from './request/create.media.request';
-import { UpdateMediaRequest } from './request/update.media.reques';
+import { UpdateMediaRequest } from './request/update.media.request';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   FileValidationPipe,
   FileValidationOptions,
 } from '@common/pipes/file-validation.pipe';
 import { EnumMediaType } from '@database/generated/prisma/client';
-import { ShowMediaRequest } from './request/show.media.request';
+import { IndexMediaRequest } from './request/index.media.request';
 
 const validationOptions = (required: boolean): FileValidationOptions => {
   return {
@@ -47,8 +47,8 @@ export class MediaController {
   }
 
   @Get()
-  index() {
-    return this.mediaService.findAll();
+  index(@Query() indexMediaRequest: IndexMediaRequest) {
+    return this.mediaService.findAll(indexMediaRequest);
   }
 
   @Get(':id')

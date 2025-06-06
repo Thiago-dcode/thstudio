@@ -4,15 +4,18 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateMediaRequest } from './request/create.media.request';
 import { PrismaService } from '@common/services/db/prisma.service';
 import { STORAGE_SERVICE } from '@common/services/storage/storage.config';
 import { StorageService } from '@common/services/storage/StorageService';
-import { UpdateMediaRequest } from './request/update.media.reques';
+import { UpdateMediaRequest } from './request/update.media.request';
 import { MediaResponse } from './response/media.response';
-import { ShowMediaRequest } from './request/show.media.request';
 import { RequestService } from '@common/services/request/request.service';
+import { MediaHelper } from './media.helper';
+import { IndexMediaRequest } from './request/index.media.request';
+import { Prisma } from '@database/generated/prisma';
 
 @Injectable()
 export class MediaService {
@@ -22,24 +25,59 @@ export class MediaService {
     @Inject(STORAGE_SERVICE)
     private readonly storageService: StorageService,
     private readonly requestService: RequestService,
+    private readonly mediaHelper: MediaHelper,
   ) {}
 
- 
-  findAll() {
+  findAll(indexMediaRequest: IndexMediaRequest) {
+    const { type, shape, userId, categories } = indexMediaRequest;
+
     return `This action returns all media`;
   }
 
   async findOne(id: number) {
-    this.logger.log(this.requestService.language);
-
-    return `This action returns a #${id} media`;
+    const media = await this.prisma.media.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        address: true,
+        translations: {
+          where: {
+            languageCode: this.requestService.language,
+          },
+        },
+        categories: {
+          include: {
+            translations: {
+              where: {
+                languageCode: this.requestService.language,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+    const url = await this.storageService.getFile(
+      this.mediaHelper.buildPath(media),
+    );
+    return new MediaResponse(media, url);
   }
   async create(
     createMediaRequest: CreateMediaRequest,
     file: Express.Multer.File,
   ) {
-    const { title, description, user_id, project_id, service_id } =
-      createMediaRequest;
+    const {
+      title,
+      description,
+      userId,
+      projectId,
+      serviceId,
+      categories,
+      tags,
+    } = createMediaRequest;
     const type = this.storageService.getType(file);
     if (!type) {
       throw new BadRequestException('Invalid file type');
@@ -47,13 +85,17 @@ export class MediaService {
     const shape = this.storageService.getShape(file);
     const media = await this.prisma.media.create({
       data: {
-        userId: user_id,
-        projectId: project_id,
-        serviceId: service_id,
+        userId,
+        projectId,
+        serviceId,
         type,
         shape,
         title,
         description,
+        categories: {
+          connect: categories?.map((id) => ({ id })),
+        },
+        tags: tags || [],
       },
     });
     if (!media) {
@@ -72,9 +114,9 @@ export class MediaService {
       }
       const url = await this.storageService.uploadAndGetFile(
         file,
-        `media/${media.type}/${media.id}`,
+        this.mediaHelper.buildPath(media),
       );
-      return new MediaResponse(media, url);
+      return this.findOne(media.id);
     } catch (error) {
       await this.prisma.media.delete({
         where: {
@@ -89,6 +131,8 @@ export class MediaService {
     updateMediaRequest: UpdateMediaRequest,
     file: Express.Multer.File,
   ) {
+    console.log(updateMediaRequest);
+    console.log(file);
     return `This action updates a #${id} media`;
   }
 

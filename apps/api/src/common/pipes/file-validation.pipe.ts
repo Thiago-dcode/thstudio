@@ -63,7 +63,7 @@ export class FileValidationPipe
         const keys = Object.keys(maxSize);
         for (let index = 0; index < keys.length; index++) {
           const key = keys[index];
-        
+
           if (MAX_SIZE_MAP[key].includes(file.mimetype)) {
             const _maxSize = maxSize[key];
             if (file.size > _maxSize) {

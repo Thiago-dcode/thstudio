@@ -1,4 +1,4 @@
-  import { MiddlewareConsumer, Module, RequestMethod} from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { InterceptorsProvider } from '@common/interceptors/interceptor.providers';
 import { MediaModule } from '@modules/media/media.module';
 import { ConfigModule } from '@nestjs/config';
@@ -14,9 +14,7 @@ import { AllExceptionFilter } from '@common/filters/all-exception.filter';
 import { RequestModule } from '@common/services/request/request.module';
 import { LanguageMiddleware } from '@common/middlewares/language.middleware';
 import { LoggerModule } from 'nestjs-pino';
-import {
-  CorrelationIdMiddleware,
-} from '@common/middlewares/correlation-id/correlation-id.middleware';
+import { CorrelationIdMiddleware } from '@common/middlewares/correlation-id/correlation-id.middleware';
 import { Request } from 'express';
 import { CacheModule } from '@nestjs/cache-manager';
 @Module({
@@ -45,7 +43,6 @@ import { CacheModule } from '@nestjs/cache-manager';
             return undefined;
           },
         },
-       
       },
     }),
     ConfigModule.forRoot({

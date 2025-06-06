@@ -1,6 +1,6 @@
 import { EnumLanguage, EnumMediaType, PrismaClient } from '../generated/prisma';
 
-export const projectStatusSeeder = async (prisma: PrismaClient) => {
+export const categorySeeder = async (prisma: PrismaClient) => {
   const CATEGORIES: {
     name: string;
     categoryType: EnumMediaType;

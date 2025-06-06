@@ -4,4 +4,3 @@ export type Brand = {
   createdAt: Date;
   updatedAt: Date;
 };
-

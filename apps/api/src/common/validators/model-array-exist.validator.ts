@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -8,24 +10,16 @@ import {
 import { PrismaService } from '@common/services/db/prisma.service';
 import { Prisma } from '@database/generated/prisma';
 import { Injectable } from '@nestjs/common';
-
-const PRISMA_FIELD_TYPES = {
-  BigInt: 'number',
-  Boolean: 'boolean',
-  Bytes: 'string',
-  DateTime: 'Date',
-  Decimal: 'number',
-  Float: 'number',
-  Int: 'number',
-  JSON: 'object',
-  String: 'string',
-} as const;
+import { PRISMA_FIELD_TYPES } from './model-exist.validator';
 
 @Injectable()
 @ValidatorConstraint({ name: 'modelArrayExist', async: true })
 export class ModelArrayExistValidator implements ValidatorConstraintInterface {
   private message: string;
   constructor(private readonly prisma: PrismaService) {}
+  lowerCaseFirst = (str: string) => {
+    return str.charAt(0).toLowerCase() + str.slice(1);
+  };
 
   async validate(value: any, args: ValidationArguments) {
     //If the value is optional or required, should handle by another validator
@@ -36,7 +30,10 @@ export class ModelArrayExistValidator implements ValidatorConstraintInterface {
       return false;
     }
     if (value.length === 0) return true;
-    const [model, field = 'id'] = args.constraints;
+    const [model, field = 'id'] = args.constraints as [
+      Prisma.ModelName,
+      string,
+    ];
     const modelFields = Prisma.dmmf.datamodel.models.find(
       (_model) => _model.name === model,
     ).fields;
@@ -49,24 +46,28 @@ export class ModelArrayExistValidator implements ValidatorConstraintInterface {
       !modelFields.find(
         (_field) =>
           _field.name === field &&
-          value.every(
-            (item: any) => PRISMA_FIELD_TYPES[_field.type] === typeof item,
-          ),
+          PRISMA_FIELD_TYPES[_field.type] === typeof value[0], //We assume that all items in the array are of the same type due previous validation
       )
     ) {
       this.message = `Field ${field} does not exist in ${model} or is not of type ${typeof value}`;
       return false;
     }
-    const modelClient = this.prisma[model.toLowerCase()];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const modelClient = this.prisma[this.lowerCaseFirst(model)];
     try {
-      const records = await Promise.all(
-        value.map(async (item: any) => {
-          return await (modelClient as any).count({
-            where: { [field]: item },
-          });
-        }),
-      );
-      return records.every((record) => record > 0);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const records = await modelClient.findMany({
+        where: {
+          [field]: {
+            in: value,
+          },
+        },
+      });
+      const result = records.length === value.length;
+      if (!result) {
+        this.message = `Some of the ${field} provided does not exist`;
+      }
+      return result;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError ||
@@ -82,7 +83,7 @@ export class ModelArrayExistValidator implements ValidatorConstraintInterface {
     }
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage() {
     return this.message;
   }
 }
@@ -92,7 +93,7 @@ export function ModelArrayExist(
   field?: string,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'modelArrayExist',
       target: object.constructor,

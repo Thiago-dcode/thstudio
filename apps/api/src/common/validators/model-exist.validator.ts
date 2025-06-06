@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -9,7 +10,7 @@ import { PrismaService } from '@common/services/db/prisma.service';
 import { Prisma } from '@database/generated/prisma';
 import { Injectable } from '@nestjs/common';
 
-const PRISMA_FIELD_TYPES = {
+export const PRISMA_FIELD_TYPES = {
   BigInt: 'number',
   Boolean: 'boolean',
   Bytes: 'string',
@@ -34,7 +35,10 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
       this.message = 'Invalid value type, only primitive value is allowed';
       return false;
     }
-    const [model, field = 'id'] = args.constraints;
+    const [model, field = 'id'] = args.constraints as [
+      Prisma.ModelName,
+      string,
+    ];
     const modelFields = Prisma.dmmf.datamodel.models.find(
       (_model) => _model.name === model,
     ).fields;
@@ -54,8 +58,13 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
       return false;
     }
     const modelClient = this.prisma[model.toLowerCase()];
+    if (!modelClient) {
+      this.message = `Model ${model} does not exist`;
+      return false;
+    }
     try {
-      const record = await (modelClient as any).count({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      const record = await modelClient.count({
         where: { [field]: value },
       });
       if (record == 0) {
@@ -78,7 +87,7 @@ export class ModelExistValidator implements ValidatorConstraintInterface {
     }
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage() {
     return this.message;
   }
 }
@@ -88,7 +97,7 @@ export function ModelExist(
   field?: string,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'modelExist',
       target: object.constructor,

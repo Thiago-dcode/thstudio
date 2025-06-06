@@ -3,8 +3,10 @@ import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import nestConfig from '@repo/eslint-config/nest.js';
 
 export default tseslint.config(
+  nestConfig,
   {
     ignores: ['eslint.config.mjs'],
   },

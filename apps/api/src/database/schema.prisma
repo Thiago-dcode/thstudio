@@ -180,6 +180,7 @@ model Media {
   user         User?              @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   categories   MediaCategory[]
   translations MediaTranslation[]
+  tags         String[]           @default([])
 
   @@map("media")
 }

@@ -4,6 +4,7 @@ import { userSeeder } from './user.seeder';
 import { projectStatusSeeder } from './projectStatus.seeder';
 import { languageSeeder } from './language.seeder';
 import { countrySeeder } from './country.seeder';
+import { categorySeeder } from './category.seeder';
 (async () => {
   const prisma = new PrismaClient();
   await languageSeeder(prisma);
@@ -11,4 +12,5 @@ import { countrySeeder } from './country.seeder';
   await roleSeeder(prisma);
   await userSeeder(prisma);
   await projectStatusSeeder(prisma);
+  await categorySeeder(prisma);
 })();

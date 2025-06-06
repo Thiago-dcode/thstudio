@@ -49,23 +49,23 @@ export class LanguageMiddleware implements NestMiddleware {
             });
             language = defaultLanguage?.code;
           }
+          //Fallback in case no language is found(should never happen)
+          if (!language) language = EnumLanguage.ES;
         }
       }
-      //Fallback in case no language is found(should never happen)
-      if (!language) language = EnumLanguage.ES;
-
-      //Avoid storing the same language again
-      if (!cachedLanguage || cachedLanguage !== language) {
-        await this.cacheManager.set(
-          DEFAULT_LANGUAGE_KEY,
-          language,
-          60 * 60 * 24 * 30,
-        );
-      }
-      res.setHeader(LANGUAGE_HEADER, language);
-      this.requestService.language = language;
-
-      next();
     }
+
+    //Avoid storing the same language again
+    if (!cachedLanguage || cachedLanguage !== language) {
+      await this.cacheManager.set(
+        DEFAULT_LANGUAGE_KEY,
+        language,
+        60 * 60 * 24 * 30,
+      );
+    }
+    res.setHeader(LANGUAGE_HEADER, language);
+    this.requestService.language = language;
+
+    next();
   }
 }
