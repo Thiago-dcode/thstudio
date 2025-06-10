@@ -14,8 +14,6 @@ import { AllExceptionFilter } from '@common/filters/all-exception.filter';
 import { RequestModule } from '@common/services/request/request.module';
 import { LanguageMiddleware } from '@common/middlewares/language.middleware';
 import { LoggerModule } from 'nestjs-pino';
-import { CorrelationIdMiddleware } from '@common/middlewares/correlation-id/correlation-id.middleware';
-import { Request } from 'express';
 import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
@@ -36,7 +34,7 @@ import { CacheModule } from '@nestjs/cache-manager';
         messageKey: 'message',
         autoLogging: false,
         serializers: {
-          req(req: Request) {
+          req() {
             return undefined;
           },
           res() {
@@ -63,7 +61,6 @@ import { CacheModule } from '@nestjs/cache-manager';
     ...InterceptorsProvider,
     ...PipesProvider,
     ...ValidatorProviders,
-
     {
       provide: APP_FILTER,
       useClass: AllExceptionFilter,
@@ -90,6 +87,5 @@ export class AppModule {
       )
       .forRoutes('*');
     consumer.apply(LanguageMiddleware).forRoutes('*');
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
   }
 }

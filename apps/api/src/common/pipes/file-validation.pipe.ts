@@ -30,13 +30,16 @@ export class FileValidationPipe
   transform(file: Express.Multer.File) {
     const { maxSize, allowedMimeTypes, required } = this.validationOptions;
     const property = this.property;
-    if (required && !file) {
-      throw new UnprocessableEntityException([
-        {
-          property,
-          message: `${property} is required`,
-        },
-      ]);
+    if (!file) {
+      if (this.validationOptions.required) {
+        throw new UnprocessableEntityException([
+          {
+            property: this.property,
+            message: `${this.property} is required`,
+          },
+        ]);
+      }
+      return undefined;
     }
     if (allowedMimeTypes && !allowedMimeTypes.includes(file.mimetype)) {
       throw new UnprocessableEntityException([

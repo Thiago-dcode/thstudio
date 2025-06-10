@@ -2,6 +2,7 @@ import { ModelExist } from '@common/validators/model-exist.validator';
 import {
   isArray,
   IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -43,7 +44,9 @@ export class CreateMediaRequest {
   @ModelExist('Service')
   serviceId?: number;
 
-  @Transform(({ value }) => (value ? value.map(Number) : undefined))
+  @Transform(({ value }) =>
+    value ? (Array.isArray(value) ? value.map(Number) : [Number(value)]) : [],
+  )
   @IsArray()
   @IsNotEmpty()
   @IsOptional()
@@ -56,4 +59,9 @@ export class CreateMediaRequest {
   @IsOptional()
   @IsString({ each: true })
   tags?: string[];
+
+  @Transform(({ value }) => value == '1' || value === true)
+  @IsBoolean()
+  @IsOptional()
+  addWatermark?: boolean;
 }

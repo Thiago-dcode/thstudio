@@ -5,6 +5,7 @@
     "esModuleInterop": true,
     "incremental": false,
     "outDir": "dist",
+    "types": ["jest", "node", "Multer"],
     "paths": {
       "@database/*": ["database/*"],
       "@common/*": ["common/*"],
@@ -13,5 +14,5 @@
     }
   },
   "include": ["src"],
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "exclude": ["node_modules", "test", "dist"]
 }

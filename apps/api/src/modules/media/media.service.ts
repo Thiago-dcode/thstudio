@@ -15,7 +15,7 @@ import { MediaResponse } from './response/media.response';
 import { RequestService } from '@common/services/request/request.service';
 import { MediaHelper } from './media.helper';
 import { IndexMediaRequest } from './request/index.media.request';
-import { Prisma } from '@database/generated/prisma';
+import { MediaCompactListResponse } from './response/media.category.list.response';
 
 @Injectable()
 export class MediaService {
@@ -28,10 +28,57 @@ export class MediaService {
     private readonly mediaHelper: MediaHelper,
   ) {}
 
-  findAll(indexMediaRequest: IndexMediaRequest) {
+  async findAll(indexMediaRequest: IndexMediaRequest) {
     const { type, shape, userId, categories } = indexMediaRequest;
+    const media = await this.prisma.media.findMany({
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        shape: true,
+        projectId: true,
+        serviceId: true,
+        userId: true,
+        tags: true,
+        categories: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      where: {
+        type,
+        shape,
+        userId,
+        categories: categories
+          ? {
+              some: {
+                id: {
+                  in: categories,
+                },
+              },
+            }
+          : undefined,
+      },
+    });
 
-    return `This action returns all media`;
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+    const mediaWithUrl = await Promise.all(
+      media.map(async (media) => {
+        const url = await this.storageService.getFile(
+          this.mediaHelper.buildPath(media),
+        );
+        return {
+          ...media,
+          url,
+        };
+      }),
+    );
+
+    return new MediaCompactListResponse(mediaWithUrl);
   }
 
   async findOne(id: number) {
@@ -60,6 +107,7 @@ export class MediaService {
     if (!media) {
       throw new NotFoundException('Media not found');
     }
+
     const url = await this.storageService.getFile(
       this.mediaHelper.buildPath(media),
     );
@@ -77,6 +125,7 @@ export class MediaService {
       serviceId,
       categories,
       tags,
+      addWatermark,
     } = createMediaRequest;
     const type = this.storageService.getType(file);
     if (!type) {
@@ -97,6 +146,22 @@ export class MediaService {
         },
         tags: tags || [],
       },
+      include: {
+        categories: {
+          include: {
+            translations: {
+              where: {
+                languageCode: this.requestService.language,
+              },
+            },
+          },
+        },
+        translations: {
+          where: {
+            languageCode: this.requestService.language,
+          },
+        },
+      },
     });
     if (!media) {
       throw new InternalServerErrorException('Failed to create media');
@@ -109,6 +174,20 @@ export class MediaService {
           90,
           1 * 1024 * 1024,
         );
+        if (addWatermark) {
+          try {
+            const watermarkBuffer =
+              await this.storageService.getFileBuffer('media/watermark');
+            file.buffer = await this.storageService.addWatermark(
+              file.buffer,
+              watermarkBuffer,
+            );
+          } catch (error) {
+            throw new InternalServerErrorException(
+              'Failed to add watermark to image',
+            );
+          }
+        }
       } else if (media.type === 'VIDEO') {
         //TODO: compress video
       }
@@ -116,7 +195,7 @@ export class MediaService {
         file,
         this.mediaHelper.buildPath(media),
       );
-      return this.findOne(media.id);
+      return new MediaResponse(media, url);
     } catch (error) {
       await this.prisma.media.delete({
         where: {
@@ -126,14 +205,93 @@ export class MediaService {
       throw error;
     }
   }
-  update(
+  async update(
     id: number,
     updateMediaRequest: UpdateMediaRequest,
     file: Express.Multer.File,
   ) {
-    console.log(updateMediaRequest);
-    console.log(file);
-    return `This action updates a #${id} media`;
+    const {
+      title,
+      description,
+      categories,
+      tags,
+      projectId,
+      serviceId,
+      userId,
+    } = updateMediaRequest;
+
+    let media = await this.prisma.media.findUnique({
+      where: { id },
+      include: {
+        categories: {
+          include: {
+            translations: {
+              where: {
+                languageCode: this.requestService.language,
+              },
+            },
+          },
+        },
+        translations: {
+          where: {
+            languageCode: this.requestService.language,
+          },
+        },
+      },
+    });
+
+    media = await this.prisma.media.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        projectId,
+        serviceId,
+        shape: file ? this.storageService.getShape(file) : media.shape,
+        type: file ? this.storageService.getType(file) : media.type,
+        userId,
+        categories: {
+          set: categories?.map((id) => ({ id })),
+          disconnect: media.categories
+            .filter((category) => !categories?.includes(category.id))
+            .map((category) => ({ id: category.id })),
+        },
+        tags: tags || [],
+      },
+      include: {
+        categories: {
+          include: {
+            translations: {
+              where: {
+                languageCode: this.requestService.language,
+              },
+            },
+          },
+        },
+        translations: {
+          where: {
+            languageCode: this.requestService.language,
+          },
+        },
+      },
+    });
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+    let url: string;
+    if (!file) {
+      const shape = this.storageService.getShape(file);
+      media.type = this.storageService.getType(file);
+      url = await this.storageService.getFile(
+        this.mediaHelper.buildPath(media),
+      );
+    } else {
+      url = await this.storageService.uploadAndGetFile(
+        file,
+        this.mediaHelper.buildPath(media),
+      );
+    }
+    return new MediaResponse(media, url);
   }
 
   remove(id: number) {

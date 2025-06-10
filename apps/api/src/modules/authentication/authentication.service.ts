@@ -29,7 +29,9 @@ export class AuthenticationService {
       throw new UnauthorizedException('Invalid credentials');
     }
     const payload = { sub: user.id, username: user.username };
-    const token = await this.jwtService.signAsync(payload);
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '24h',
+    });
     return new LoginResponse(user, user.role, token);
   }
 }

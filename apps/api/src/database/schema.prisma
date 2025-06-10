@@ -161,6 +161,8 @@ model ServiceTranslation {
   @@map("service_translations")
 }
 
+
+
 model Media {
   id           Int                @id @default(autoincrement())
   title        String?

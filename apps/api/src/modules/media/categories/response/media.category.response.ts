@@ -14,7 +14,7 @@ export class MediaCategoryResponse {
   @Expose()
   description: string;
   @Expose()
-  translations?: {
+  translation?: {
     name: string | null;
     description: string | null;
   };
@@ -23,7 +23,7 @@ export class MediaCategoryResponse {
     this.name = mediaCategory.name;
     this.description = mediaCategory.description;
     if (mediaCategory.translations.length > 0) {
-      this.translations = {
+      this.translation = {
         name: mediaCategory.translations[0].name,
         description: mediaCategory.translations[0].description,
       };

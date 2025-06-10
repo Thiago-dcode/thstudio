@@ -32,6 +32,15 @@ export class AmazonS3Service extends StorageService {
       },
     });
   }
+  async getFileBuffer(fileName: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileName,
+    });
+    const result = await this.s3Client.send(command);
+    const data = await result.Body.transformToByteArray();
+    return Buffer.from(data);
+  }
   async getFile(fileName: string): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucketName,

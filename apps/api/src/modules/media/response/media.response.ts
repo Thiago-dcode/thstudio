@@ -24,7 +24,7 @@ export class MediaResponse {
   @Expose()
   tags: string[];
   @Expose()
-  translations?: {
+  translation?: {
     title: string | null;
     description: string | null;
   };
@@ -45,7 +45,7 @@ export class MediaResponse {
     this.url = url;
     this.tags = media.tags;
     if (media.translations.length > 0) {
-      this.translations = {
+      this.translation = {
         title: media.translations[0].title,
         description: media.translations[0].description,
       };

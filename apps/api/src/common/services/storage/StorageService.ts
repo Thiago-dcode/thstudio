@@ -8,6 +8,7 @@ import sharp from 'sharp';
 export abstract class StorageService {
   constructor(protected readonly configService: ConfigService) {}
   abstract getFile(pathToFile: string): Promise<string>;
+  abstract getFileBuffer(pathToFile: string): Promise<Buffer>;
   abstract uploadFile(
     file: Express.Multer.File,
     fileName?: string,
@@ -78,16 +79,54 @@ export abstract class StorageService {
       const ratio = size.width / size.height;
 
       if (size.width > size.height) {
-        return ratio >= 1.5
+        return ratio >= 2
           ? EnumMediaShape.LANDSCAPE_LARGE
           : EnumMediaShape.LANDSCAPE;
       } else if (size.width < size.height) {
-        return ratio <= 0.67
+        return ratio <= 0.5
           ? EnumMediaShape.PORTRAIT_LARGE
           : EnumMediaShape.PORTRAIT;
       }
       return EnumMediaShape.SQUARE;
     }
+    if (file.mimetype.startsWith('video/')) {
+    }
     return undefined;
+  }
+
+  public async addWatermark(
+    fileToAddWatermark: Buffer | string,
+    watermark: Buffer | string,
+  ): Promise<Buffer> {
+    let fileToAddWatermarkBuffer: Buffer;
+    let watermarkBuffer: Buffer;
+
+    if (typeof fileToAddWatermark === 'string') {
+      fileToAddWatermarkBuffer = await this.getFileBuffer(fileToAddWatermark);
+    } else {
+      fileToAddWatermarkBuffer = fileToAddWatermark;
+    }
+    if (typeof watermark === 'string') {
+      watermarkBuffer = await this.getFileBuffer(watermark);
+    } else {
+      watermarkBuffer = watermark;
+    }
+
+    const size = imageSize(fileToAddWatermarkBuffer);
+    const watermarkBufferResized = await sharp(watermarkBuffer)
+      .resize(Math.round(size.width * 0.2))
+      .toBuffer();
+
+    const result = sharp(fileToAddWatermarkBuffer)
+      .composite([
+        {
+          input: watermarkBufferResized,
+          gravity: 'southeast',
+          blend: 'over',
+        },
+      ])
+      .toBuffer();
+
+    return result;
   }
 }

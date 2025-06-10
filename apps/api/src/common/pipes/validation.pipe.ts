@@ -9,6 +9,7 @@ export const ValidationPipeProvider = {
       transform: true,
       validateCustomDecorators: true,
       exceptionFactory: (errors) => {
+        console.log(errors);
         const result = errors.map((error) => ({
           property: error.property,
           message: error.constraints[Object.keys(error.constraints)[0]],

@@ -36,15 +36,7 @@ const validationOptions = (required: boolean): FileValidationOptions => {
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-  @Post()
-  @UseInterceptors(FileInterceptor('media'))
-  create(
-    @Body() createMediaRequest: CreateMediaRequest,
-    @UploadedFile(new FileValidationPipe(validationOptions(true), 'media'))
-    file: Express.Multer.File,
-  ) {
-    return this.mediaService.create(createMediaRequest, file);
-  }
+
 
   @Get()
   index(@Query() indexMediaRequest: IndexMediaRequest) {
@@ -55,7 +47,15 @@ export class MediaController {
   show(@Param('id') id: string) {
     return this.mediaService.findOne(+id);
   }
-
+  @Post()
+  @UseInterceptors(FileInterceptor('media'))
+  create(
+    @Body() createMediaRequest: CreateMediaRequest,
+    @UploadedFile(new FileValidationPipe(validationOptions(true), 'media'))
+    file: Express.Multer.File,
+  ) {
+    return this.mediaService.create(createMediaRequest, file);
+  }
   @Patch(':id')
   @UseInterceptors(FileInterceptor('media'))
   update(
