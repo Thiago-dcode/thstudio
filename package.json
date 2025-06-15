@@ -18,5 +18,11 @@
   "packageManager": "pnpm@10.11.1",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "create-next-app": "^15.3.3",
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }

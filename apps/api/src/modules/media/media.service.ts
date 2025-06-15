@@ -16,6 +16,7 @@ import { RequestService } from '@common/services/request/request.service';
 import { MediaHelper } from './media.helper';
 import { IndexMediaRequest } from './request/index.media.request';
 import { MediaCompactListResponse } from './response/media.category.list.response';
+import { Media } from '@database/generated/prisma';
 
 @Injectable()
 export class MediaService {
@@ -167,34 +168,7 @@ export class MediaService {
       throw new InternalServerErrorException('Failed to create media');
     }
     try {
-      //compress image
-      if (media.type === 'IMAGE') {
-        file.buffer = await this.storageService.optimizeImageToWebp(
-          file,
-          90,
-          1 * 1024 * 1024,
-        );
-        if (addWatermark) {
-          try {
-            const watermarkBuffer =
-              await this.storageService.getFileBuffer('media/watermark');
-            file.buffer = await this.storageService.addWatermark(
-              file.buffer,
-              watermarkBuffer,
-            );
-          } catch (error) {
-            throw new InternalServerErrorException(
-              'Failed to add watermark to image',
-            );
-          }
-        }
-      } else if (media.type === 'VIDEO') {
-        //TODO: compress video
-      }
-      const url = await this.storageService.uploadAndGetFile(
-        file,
-        this.mediaHelper.buildPath(media),
-      );
+      const url = await this.handleMediaStorage(media, file, addWatermark);
       return new MediaResponse(media, url);
     } catch (error) {
       await this.prisma.media.delete({
@@ -218,8 +192,9 @@ export class MediaService {
       projectId,
       serviceId,
       userId,
+      addWatermark,
     } = updateMediaRequest;
-
+    console.log('file', file);
     let media = await this.prisma.media.findUnique({
       where: { id },
       include: {
@@ -239,7 +214,11 @@ export class MediaService {
         },
       },
     });
-
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+    const type = file ? this.storageService.getType(file) : media.type;
+    const shape = file ? this.storageService.getShape(file) : media.shape;
     media = await this.prisma.media.update({
       where: { id },
       data: {
@@ -247,11 +226,11 @@ export class MediaService {
         description,
         projectId,
         serviceId,
-        shape: file ? this.storageService.getShape(file) : media.shape,
-        type: file ? this.storageService.getType(file) : media.type,
+        shape,
+        type,
         userId,
         categories: {
-          set: categories?.map((id) => ({ id })),
+          set: categories?.map((id) => ({ id, categoryType: type })),
           disconnect: media.categories
             .filter((category) => !categories?.includes(category.id))
             .map((category) => ({ id: category.id })),
@@ -280,21 +259,68 @@ export class MediaService {
     }
     let url: string;
     if (!file) {
-      const shape = this.storageService.getShape(file);
-      media.type = this.storageService.getType(file);
       url = await this.storageService.getFile(
         this.mediaHelper.buildPath(media),
       );
     } else {
-      url = await this.storageService.uploadAndGetFile(
-        file,
-        this.mediaHelper.buildPath(media),
-      );
+      url = await this.handleMediaStorage(media, file, addWatermark);
     }
     return new MediaResponse(media, url);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} media`;
+  async bulkCreate(
+    csv: Express.Multer.File,
+    files: Express.Multer.File[],
+  ) {
+    const csvData = await this.storageService.getFileBuffer(csv.path);
+  
+  }
+
+  async remove(id: number) {
+    const media = await this.prisma.media.findUnique({
+      where: { id },
+    });
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+    await this.prisma.media.delete({
+      where: { id },
+    });
+    await this.storageService.deleteFile(this.mediaHelper.buildPath(media));
+    return media;
+  }
+  async handleMediaStorage(
+    media: Media,
+    file: Express.Multer.File,
+    addWatermark: boolean,
+  ) {
+    if (media.type === 'IMAGE') {
+      file.buffer = await this.storageService.optimizeImageToWebp(
+        file,
+        90,
+        1 * 1024 * 1024,
+      );
+      if (addWatermark) {
+        try {
+          const watermarkBuffer =
+            await this.storageService.getFileBuffer('media/watermark');
+          file.buffer = await this.storageService.addWatermark(
+            file.buffer,
+            watermarkBuffer,
+          );
+        } catch (error) {
+          throw new InternalServerErrorException(
+            'Failed to add watermark to image',
+          );
+        }
+      }
+    } else if (media.type === 'VIDEO') {
+      // file.buffer = await this.storageService.optimizeVideo(file);
+    }
+    const url = await this.storageService.uploadAndGetFile(
+      file,
+      this.mediaHelper.buildPath(media),
+    );
+    return url;
   }
 }

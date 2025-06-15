@@ -54,6 +54,9 @@ export class CreateMediaRequest {
   @ModelArrayExist('MediaCategory', 'id')
   categories?: number[];
 
+  @Transform(({ value }) =>
+    value ? (Array.isArray(value) ? value : [value]) : [],
+  )
   @IsArray()
   @IsNotEmpty()
   @IsOptional()

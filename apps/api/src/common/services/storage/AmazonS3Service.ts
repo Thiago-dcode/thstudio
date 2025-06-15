@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -9,6 +10,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { StorageService } from '@common/services/storage/StorageService';
 import { StorageUploadException } from './exceptions/StorageUploadException';
 import { StorageGetException } from './exceptions/StorageGetException';
+import { StorageDeleteException } from './exceptions/StorageDeleteException';
 
 @Injectable()
 export class AmazonS3Service extends StorageService {
@@ -52,7 +54,9 @@ export class AmazonS3Service extends StorageService {
       });
       return url;
     } catch (error) {
-      throw new StorageGetException(error);
+      throw new StorageGetException(
+        `Failed to get file ${fileName}`,
+      );
     }
   }
 
@@ -67,7 +71,9 @@ export class AmazonS3Service extends StorageService {
       const result = await this.s3Client.send(command);
       return !!result;
     } catch (error) {
-      throw new StorageUploadException(error);
+      throw new StorageUploadException(
+        `Failed to upload file ${fileName || file.originalname}`,
+      );
     }
   }
 
@@ -80,6 +86,17 @@ export class AmazonS3Service extends StorageService {
   }
 
   async deleteFile(fileUrl: string): Promise<boolean> {
-    throw new Error('Not implemented');
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileUrl,
+    });
+    try {
+      await this.s3Client.send(command);
+      return true;
+    } catch (error) {
+      throw new StorageDeleteException(
+        `Failed to delete file ${fileUrl}: ${error}`,
+      );
+    }
   }
 }

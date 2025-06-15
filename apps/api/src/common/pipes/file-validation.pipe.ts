@@ -31,7 +31,7 @@ export class FileValidationPipe
     const { maxSize, allowedMimeTypes, required } = this.validationOptions;
     const property = this.property;
     if (!file) {
-      if (this.validationOptions.required) {
+      if (required) {
         throw new UnprocessableEntityException([
           {
             property: this.property,

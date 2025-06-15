@@ -36,8 +36,6 @@ const validationOptions = (required: boolean): FileValidationOptions => {
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-
-
   @Get()
   index(@Query() indexMediaRequest: IndexMediaRequest) {
     return this.mediaService.findAll(indexMediaRequest);
@@ -56,6 +54,8 @@ export class MediaController {
   ) {
     return this.mediaService.create(createMediaRequest, file);
   }
+
+
   @Patch(':id')
   @UseInterceptors(FileInterceptor('media'))
   update(

@@ -3,7 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { EnumMediaShape, EnumMediaType } from '@database/generated/prisma';
 import { imageSize } from 'image-size';
 import sharp from 'sharp';
-
+import ffmpeg from 'fluent-ffmpeg';
+import { PassThrough, Readable } from 'node:stream';
+import { unlink, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
 @Injectable()
 export abstract class StorageService {
   constructor(protected readonly configService: ConfigService) {}
@@ -63,7 +67,75 @@ export abstract class StorageService {
     };
     return await optimizeRecursively(file.buffer, quality, _targetSize);
   }
+  public async optimizeVideo(file: Express.Multer.File): Promise<Buffer> {
+    throw new Error('Not working');
+    // const metadata = await this.getVideoMetadata(file);
+    return new Promise((resolve, reject) => {
+      const bufferStream = new PassThrough();
+      const buffers = [];
+      bufferStream.on('data', function (buf) {
+        buffers.push(buf);
+      });
+      bufferStream.on('end', function () {
+        const outputBuffer = Buffer.concat(buffers);
+        resolve(outputBuffer);
+      });
+      ffmpeg(Readable.from(file.buffer))
+        .videoCodec('libx264')
+        .size(`1280x720`)
+        .on('error', (err) => {
+          console.error('Error:', err.message);
+          reject(err);
+        })
+        .writeToStream(bufferStream);
+    });
+  }
+  public async getVideoMetadata(file: Express.Multer.File): Promise<{
+    width: number;
+    height: number;
+    bitrate: number;
+    duration: number;
+    frameRate: number;
+  } | null> {
+    throw new Error('Not working');
+    if (!file.mimetype.startsWith('video/')) return undefined;
+    const tempPath = path.join(__dirname, 'temp');
+    if (!existsSync(tempPath)) {
+      mkdirSync(tempPath);
+    }
+    const tempFilePath = path.join(tempPath, 'temp.mp4');
+    await writeFile(tempFilePath, file.buffer);
+    const result = await new Promise<{
+      width: number;
+      height: number;
+      bitrate: number;
+      duration: number;
+      frameRate: number;
+    } | null>(async (resolve, reject) => {
+      ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+        if (err) {
+          console.error('Error getting video metadata:', err);
+          resolve(null);
+        } else {
+          if (!metadata?.streams?.[0]) {
+            resolve(null);
+          } else {
+            const result = {
+              width: metadata.streams[0].width,
+              height: metadata.streams[0].height,
+              bitrate: Number(metadata.streams[0].bit_rate),
+              duration: Number(metadata.streams[0].duration),
+              frameRate: Number(metadata.streams[0].r_frame_rate.split('/')[0]),
+            };
 
+            resolve(result);
+          }
+        }
+      });
+    });
+    await unlink(tempFilePath);
+    return result;
+  }
   public getType(file: Express.Multer.File): EnumMediaType | undefined {
     if (file.mimetype.startsWith('image/')) {
       return EnumMediaType.IMAGE;
